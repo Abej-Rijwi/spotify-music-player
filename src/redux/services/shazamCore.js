@@ -9,7 +9,7 @@ export const shazamCoreApi = createApi({
         "X-RapidAPI-Key",
         import.meta.env.VITE_SHAZAM_CORE_RAPID_API_KEY
       );
-
+      headers.set("X-RapidAPI-Host", "shazam-core.p.rapidapi.com");
       return headers;
     },
   }),
@@ -34,6 +34,38 @@ export const shazamCoreApi = createApi({
     getSongRelated: builder.query({
       query: ({ songid }) => `v1/tracks/related?track_id=${songid}`,
     }),
+
+    recognizeTrack: builder.mutation({
+      async queryFn(audioBlob) {
+        try {
+          const formData = new FormData();
+          formData.append("file", audioBlob, "audio.webm");
+
+          const response = await fetch(
+            "https://shazam-core.p.rapidapi.com/v1/tracks/recognize",
+            {
+              method: "POST",
+              headers: {
+                "X-RapidAPI-Key": import.meta.env
+                  .VITE_SHAZAM_CORE_RAPID_API_KEY,
+                "X-RapidAPI-Host": "shazam-core.p.rapidapi.com",
+              },
+              body: formData,
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            return { error: { status: response.status, data: errorText } };
+          }
+
+          const data = await response.json();
+          return { data };
+        } catch (error) {
+          return { error };
+        }
+      },
+    }),
   }),
 });
 
@@ -45,4 +77,5 @@ export const {
   useGetArtistDetailsQuery,
   useGetSongDetailsQuery,
   useGetSongRelatedQuery,
+  useRecognizeTrackMutation,
 } = shazamCoreApi;
